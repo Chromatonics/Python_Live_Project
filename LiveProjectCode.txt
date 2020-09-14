@@ -1,0 +1,79 @@
+models.py:
+
+from datetime import datetime
+
+
+PRECIPITATION_TYPE = [
+    ('None', 'None'),
+    ('Rain', 'Rain'),
+    ('Snow', 'Snow'),
+    ('Hail', 'Hail'),
+]
+
+
+class LocalCondition(models.Model):
+    location = models.CharField(max_length=50, blank=False)
+    temperature = models.IntegerField(blank=False)
+    precipitation = models.CharField(max_length=50, choices=PRECIPITATION_TYPE, blank=False)
+    date = models.DateTimeField(default=datetime.now, blank=True)
+
+    LocalCondition = models.Manager()
+
+    def __str__(self):
+        return self.location
+
+
+
+
+
+views.py:
+
+from .forms import WeatherIndexForm
+from .models import LocalCondition
+from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect, get_object_or_404
+
+
+def weather_home(request):
+    return render(request, 'WeatherApp/weather_home.html')
+
+
+def add_index(request):
+    form = WeatherIndexForm(request.POST or None)
+    if form.is_valid():
+        form.save()
+        return HttpResponseRedirect('../')
+    else:
+        print(form.errors)
+        form = WeatherIndexForm()
+    return render(request, 'WeatherApp/weather_create.html', {'form': form})
+
+
+def datadisplay(request):
+    get_posts = LocalCondition.LocalCondition.all()
+    context = {'LocalCondition': get_posts}
+    return render(request, 'WeatherApp/weather_index.html', context)
+
+
+def data_details(request, pk):
+    get_posts = get_object_or_404(LocalCondition, pk=pk)
+    context = {'LocalCondition': get_posts}
+    return render(request, 'WeatherApp/weather_details.html', context)
+
+
+
+
+
+
+urls.py:
+
+from django.urls import path
+from . import views
+
+
+urlpatterns = [
+    path('', views.weather_home, name='WAHome'),
+    path('AddIndex/', views.add_index, name='newIndex'),
+    path('index/', views.datadisplay, name='WAData'),
+    path('index/<int:pk>/data_details', views.data_details, name='WADetails'),
+]
